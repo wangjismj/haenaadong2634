@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>2026학년도 해남동초등학교 명인제 관리 앱</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, collection, doc, getDoc, setDoc, updateDoc, addDoc, 
+      onSnapshot, query, where, writeBatch, serverTimestamp, Timestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 나의 Firebase 설정 정보
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6pbcWelfsib9xi8Rxej242GVhrIE-2lo",
+      authDomain: "haenamdong2634.firebaseapp.com",
+      projectId: "haenamdong2634",
+      storageBucket: "haenamdong2634.firebasestorage.app",
+      messagingSenderId: "725776404254",
+      appId: "1:725776404254:web:233dae8be62dbede30830f"
+    };
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const firestoreDb = getFirestore(app);
+
+    // 기존 리액트 앱 소스코드와의 호환성을 위한 브릿지 객체 정의
+    window.db = {
+      collection: (collName) => {
+        return {
+          doc: (docId) => {
+            const dRef = doc(firestoreDb, collName, docId);
+            return {
+              get: () => getDoc(dRef),
+              set: (data, options) => setDoc(dRef, data, options),
+              update: (data) => updateDoc(dRef, data),
+              onSnapshot: (cb) => onSnapshot(dRef, (snap) => {
+                cb({ exists: snap.exists(), data: () => snap.data() });
+              })
+            };
+          },
+          where: (field, op, value) => {
+            const q = query(collection(firestoreDb, collName), where(field, op, value));
+            return {
+              onSnapshot: (cb) => onSnapshot(q, (qs) => {
+                cb({
+                  docs: qs.docs.map(d => ({
+                    id: d.id,
+                    data: () => d.data()
+                  }))
+                });
+              })
+            };
+          },
+          onSnapshot: (cb) => onSnapshot(collection(firestoreDb, collName), (qs) => {
+            cb({
+              docs: qs.docs.map(d => ({
+                id: d.id,
+                data: () => d.data()
+              }))
+            });
+          })
+        };
+      }
+    };
+
+    window.FieldValue = { serverTimestamp: serverTimestamp };
+    window.firebase = { firestore: { Timestamp
